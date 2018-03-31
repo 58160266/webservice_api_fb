@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <link rel="shortcut icon" type="image/png" href="https://www1-lw.xda-cdn.com/files/2016/01/api-a397cc184c5622fb5130af1b7baf149d.png" />
+    <meta charset="utf-8">
+    <title>
+      facebook API
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  </head>
+  <body>
+<br/><br/>
+  <div class="btn-group btn-group-lg">
+    <button type="button" class="btn btn-primary" id="login" onclick="login()">login</button>
+    <button type="button" class="btn btn-primary" id="logout" class="btn btn-info btn-lg" data-toggle="modal" data-target="#myModal"  >logout</button>
+    <div class="fb-login-button" scope="public_profile,email,user_friends" data-max-rows="1" data-size="icon" data-show-faces="false" data-auto-logout-link="true"></div>
+  </div>
+
+
+  <div class="container-fluid">
+
+  <div class="row">
+    <div class="col-sm-12" style="background-color:lavender;" id="cover_fb"></div>
+  </div>
+</div>
+
+  <div class="col-md-4"><div id="status"></div></div>
+
+  <div class="row">
+    <div id="show_detail_fb">
+        <div class="col-md-8">
+        <div id="user.id">Facebook User Id</div>
+        <div id="user.name">Facebook User name</div>
+        <div id="user.first_name">Facebook User firstname</div>
+        <div id="user.last_name">Facebook User lastname</div>
+        <div id="user.pic">Facebook User Pic</div>
+        <div>Friend<ul id="friendslist"></ul></div>
+        </div>
+    </div>
+  </div>
+
+
+<!-- ลองสร้างขึ้นมาดูเด้อ  -->
+
+<div class="container">
+  <!-- The Modal -->
+  <div class="modal fade" id="myModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h4 class="modal-title" id="modal_logout"></h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+
+        <!-- Modal footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="logout()">ตกลง</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">ไม่ใช่ตอนนี้</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <input type="text" name="postFB" id="postFB">
+
+
+  <p id="test">dfdsfsdgdrgdf</p>
+  <button onclick="cleanData()" > testEmpty </button>
+
+
+
+
+
+
+  <script>
+  // initialize and setup facebook js sdk
+  window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '234877417086475',
+        xfbml      : true,
+        version    : 'v2.11'
+      });
+
+      checkstaus();
+  };
+
+  (function(d, s, id){
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) {return;}
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+
+
+  //check facbook status
+
+  function checkstaus() {
+      FB.getLoginStatus(function(response) {
+        if (response.status === 'connected') {
+          document.getElementById('status').innerHTML = 'We are connected.';
+          document.getElementById('login').style.visibility = 'hidden';
+          document.getElementById('logout').style.visibility = 'visible';
+          showData();
+          getInfo();
+          //getUserFriends();
+
+        } else if (response.status === 'not_authorized') {
+          document.getElementById('logout').style.visibility = 'hidden';
+          document.getElementById('login').style.visibility = 'visible';
+          document.getElementById('status').innerHTML = 'We are not logged in.'
+          cleanData();
+        } else {
+          document.getElementById('logout').style.visibility = 'hidden';
+          document.getElementById('login').style.visibility = 'visible';
+          document.getElementById('status').innerHTML = 'You are not logged into Facebook.';
+          cleanData();
+        }
+      });
+  }
+
+  // login with facebook with extra permissions
+  function login() {
+    FB.login(function(response) {
+      checkstaus();
+      //getInfo();
+    }, {scope: 'public_profile,email,user_friends'});
+  }
+
+  function logout() {
+      FB.getLoginStatus(function(response) {
+      if (response && response.status === 'connected') {
+          FB.logout(function(response) {
+              document.location.reload();
+          });
+      }
+  });
+  }
+
+  // getting basic user info
+  function getInfo() {
+    FB.api('/me', 'GET', {fields: 'first_name,last_name,name,id,picture.width(150).height(150),cover'}, function(response) {
+      document.getElementById('user.id').innerHTML = response.id;
+      document.getElementById('user.name').innerHTML = response.name;
+      document.getElementById('user.first_name').innerHTML = response.first_name;
+      document.getElementById('user.last_name').innerHTML = response.last_name;
+      document.getElementById('user.pic').innerHTML = "<img src='" + response.picture.data.url + "' class='img-circle'>";
+      document.getElementById('cover_fb').innerHTML = "<img src='" + response.cover.source + "' class='img-circle'>";
+      document.getElementById('modal_logout').innerHTML = "คุณ"+response.name +"ต้องการออกจากระบบใช่หรือไม่";
+
+    });
+  }
+
+
+  function getUserFriends() {
+    FB.api("me/taggable_friends",function (response) {
+      if (response && !response.error) {
+        console.log('Got friends: ', response.data);
+          $.each(response.data,function(index,friend) {
+              //alert(friend.name);
+                  $("#friendslist").append("<li>" + friend.name + "<li>" + '<img src="'+ friend.picture.data.url +'"/>');
+          });
+      } else {
+          alert("Error!");
+      }
+    }
+  );}
+
+  //////new write
+
+  function cleanData() //ซ่อนการแสดงผล tag ข้อมูล
+  {
+    document.getElementById('show_detail_fb').style.visibility = 'hidden';
+  }
+  function showData() //แสดงการแสดงผล tag ข้อมูล
+  {
+    document.getElementById('show_detail_fb').style.visibility = 'visible';
+
+  }
+
+  </script>
+
+
+
+
+
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  </body>
+</html>
